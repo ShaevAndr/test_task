@@ -6,54 +6,47 @@ const express = require("express");
 const api = require("./api");
 const logger = require("./logger");
 const config = require("./config");
-const utils = require("./utils")
+const utils = require("./utils");
+const FIELD_ID = require("./constants");
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-function get_age(date) {
-    const birthdate = new Date(date*1000)
-    const today = new Date()
-
-	if (birthdate > today) {
-		return undefined}
-
-    const age = today.getFullYear()-birthdate.getFullYear()
-    if (today.getMonth()<=birthdate.getMonth() && today.getDate()<birthdate.getDate()) {
-        return age - 1
-    }
-    return age
-}
-
-
 
 api.getAccessToken().then(() => {
 	app.get("/ping", (req, res) => res.send("pong " + Date.now()));
 
-	app.post("/", (req, res) => {
-		for (contact of req.body.contacts.add) {
-			api.getContact(contact.id)
-			.then(data=>{
-				const birthday = utils.getFieldValue(data.custom_fields_values, 1157239)
-				
-				if (!birthday) {
-					throw new Error('дата рождения не задана')
-				}
-				
-				const customer_age = get_age(birthday)
-				if (!customer_age) {
-					throw new Error('неверная дата рождения')
-				}	
-				
-				data.custom_fields_values = [...data.custom_fields_values, utils.makeField(1159055, customer_age)]
-				api.updateContacts(data)})
-			.catch(error=>console.log(error))
+	
+	app.post("/", async (req, res) => {
+		const [updatedDeal] = req.body.leads.update		
+		const deal = await api.getDeal(updatedDeal.id, ["contacts"])
+		const services = utils.getFieldValues(deal.custom_fields_values, FIELD_ID.SERVICES)
+		const mainContactId = utils.getMainContactId(deal._embedded.contacts)
+		
+		if (!mainContactId || !services.length) {
+			if (deal.price !== 0){
+				api.updateDeals({"id": deal.id, "price":0})
+			}				
+			return 
+		}
+			
+		const contact = await api.getContact(mainContactId)
+		const costServices = utils.calculateCostServices(services, contact.custom_fields_values)
+		
+		if (deal.price === costServices){
+			return 
 		}
 
-		return res.send("ok")
+		api.updateDeals({"id": deal.id, "price":costServices})
+		const task = await api.getTasks( 10, ['filter[task_type][]=3', 
+			'&filter[entity_type][]="leads"',
+			`&filter[entity_id][]=${deal.id}`])
+		.then(data=>{console.log(data)})
+		return 
 	});
+
 
 	app.listen(config.PORT, () => logger.debug("Server started on ", config.PORT));
 });

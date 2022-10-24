@@ -273,6 +273,26 @@ function Api() {
 				return res.data ? res.data._embedded.users : [];
 			});
 	});
+
+	// Получить задачи по фильтрам
+	this.getTasks = authChecker(({ limit = LIMIT, filters }) => {
+		const url = `${ROOT_PATH}/api/v4/tasks?${querystring.stringify({
+			limit,
+			...filters,
+		})}`;
+		console.log(url)
+
+		return axios
+			.get(url, {
+				headers: {
+					Authorization: `Bearer ${access_token}`,
+				},
+			})
+			.then((res) => {
+				return res.data ? res.data.leads : [];
+			});
+	});
+
 }
 
 module.exports = new Api();
