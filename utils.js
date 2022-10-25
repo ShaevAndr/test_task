@@ -46,7 +46,7 @@ const getFieldValues = (customFields, fieldId) => {
  * @returns типовой объект с данными о поле, который необходимо передать в amoCRM.  
  */
 const makeField = (field_id, value, enum_id) => {
-	if (!value) {
+	if (!value && value !== 0) {
 		return undefined;
 	}
 	return {
@@ -131,7 +131,43 @@ const getClearPhoneNumber = (tel) => {
 	return tel ? tel.split("").filter(item => new RegExp(/\d/).test(item)).join("") : undefined;
 }; 
 
+/**
+ * Функция принимает список контактов и возвращает id main контакта
+ * применялась чтобы получать чистый номер телефона
+ * @param {*} contacts - массив контактов
+ * @returns number | undefined
+ */
+ const getMainContactId = (contacts) => {
+	const contact = contacts ?
+		contacts.find(item=> item.is_main)
+		: undefined
+	const contactId = contact ? contact.id : undefined
+	return contactId
+}; 
+
+/**
+ * Функция принимает список услуг и расценок на услуги у контактаю 
+ * возвращает совокупную стоимость услуг
+ * применялась чтобы получать общую стоиость услуг
+ * @param {*} services - массив списка услуг
+ * @param {*}  servicesPrice- массив дополнительных полей контакта
+ * @returns number | 0
+ */
+ const calculateCostServices = (services, servicesPrice) => {
+	if (!servicesPrice){
+		return 0
+	}
+
+	const  targetFields = servicesPrice.filter(item=>services.includes(item.field_name) && item.values[0].value>0)
+	const totalCost = targetFields 
+		? targetFields.reduce((prevRes, nextElement)=>prevRes+Number(nextElement.values[0].value), 0)
+		: 0
+	return totalCost
+}; 
+
 module.exports = {
+	calculateCostServices,
+	getMainContactId,
 	getFieldValue,
 	getFieldValues,
 	makeField,

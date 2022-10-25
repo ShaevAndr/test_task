@@ -108,6 +108,9 @@ function Api() {
 	};
 
 	this.getAccessToken = getAccessToken;
+	
+//СДЕЛКИ
+	
 	// Получить сделку по id
 	this.getDeal = authChecker((id, withParam = []) => {
 		return axios
@@ -162,6 +165,8 @@ function Api() {
 		});
 	});
 
+//КОНТАКТЫ
+
 	// Получить контакты
 	this.getContacts = authChecker(({ page = 1, limit = LIMIT }) => {
 		const url = `${ROOT_PATH}/api/v4/contacts?${querystring.stringify({
@@ -211,15 +216,7 @@ function Api() {
 		});
 	});
 
-	// Создать задачи
-	this.createTasks = authChecker((data) => {
-		const tasksData = [].concat(data);
-		return axios.post(`${ROOT_PATH}/api/v4/tasks`, tasksData, {
-			headers: {
-				Authorization: `Bearer ${access_token}`,
-			},
-		});
-	});
+//ВОРОНКИ	
 
 	// Получить данные воронки по ее id
 	this.getPipeline = authChecker((pipelineId) => {
@@ -245,6 +242,8 @@ function Api() {
 			)
 			.then((res) => res.data);
 	});
+
+//ДАННЫЕ ПОЛЬЗОВАТЕЛЕЙ
 
 	// Получить данные пользователя crm по его id
 	this.getUser = authChecker((userId) => {
@@ -272,6 +271,66 @@ function Api() {
 			.then((res) => {
 				return res.data ? res.data._embedded.users : [];
 			});
+	});
+
+//ЗАДАЧИ
+
+	// Получить задач по фильтрам
+	this.getTasks = authChecker(({ filters, limit = LIMIT }) => {
+		const url = `${ROOT_PATH}/api/v4/tasks?${querystring.stringify(
+			filters
+		)}`;
+
+		return axios
+			.get(url, {
+				headers: {
+					Authorization: `Bearer ${access_token}`,
+				},
+			})
+			.then((res) => {
+				return res.data ? res.data : undefined;
+			});
+	});
+   
+	// Создать задачи
+	this.createTasks = authChecker((data) => {
+		const tasksData = [].concat(data);
+		return axios.post(`${ROOT_PATH}/api/v4/tasks`, tasksData, {
+			headers: {
+				Authorization: `Bearer ${access_token}`,
+			},
+		});
+	});
+	
+	// Обновить задачу
+	this.updateTask = authChecker((data) => {
+		return axios.patch(`${ROOT_PATH}/api/v4/tasks`, [].concat(data), {
+			headers: {
+				Authorization: `Bearer ${access_token}`,
+			},
+		});
+	});
+
+	// Получить задачу по  id
+	this.getTask = authChecker((taskId) => {
+		return axios
+			.get(`${ROOT_PATH}/api/v4/tasks/${taskId}`, {
+				headers: {
+					Authorization: `Bearer ${access_token}`,
+				},
+			})
+			.then((res) => res.data);
+	});
+
+//ЗАМЕТКИ
+
+	// добавить примечание
+	this.createNote = authChecker((data) => {
+		return axios.post(`${ROOT_PATH}/api/v4/leads/notes`, [].concat(data), {
+			headers: {
+				Authorization: `Bearer ${access_token}`,
+			},
+		});
 	});
 }
 
