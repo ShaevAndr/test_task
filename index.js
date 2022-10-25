@@ -48,8 +48,7 @@ api.getAccessToken().then(() => {
 				}	
 				
 				data.custom_fields_values = [...data.custom_fields_values, utils.makeField(1159055, customer_age)]
-				api.updateContacts(data)
-			})
+				api.updateContacts(data)})
 			.catch(error=>console.log(error))
 		}
 
